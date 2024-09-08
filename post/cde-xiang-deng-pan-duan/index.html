@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>C#的相等判断 | 秋收冬藏</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://heanrum.github.io/favicon.ico?v=1725801117880">
+<link rel="stylesheet" href="https://heanrum.github.io/styles/main.css">
+
+
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css" />
+  
+
+  
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="什么是相等
+在C#中我们经常会需要判断两个变量是否相等，相等理论上有两种：
+
+同一性(identity)，即是否两个变量是否指向同一个对象。
+相等性(equality)，即两个变量内部的值是否相同，例如两个字符串的内容是否相同。
+
+显然如果..." />
+    <meta name="keywords" content="C#" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://heanrum.github.io">
+        <img src="https://heanrum.github.io/images/avatar.png?v=1725801117880" class="site-logo">
+        <h1 class="site-title">秋收冬藏</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      温故而知新
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://heanrum.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">C#的相等判断</h2>
+            <div class="post-date">2024-09-01</div>
+            
+            <div class="post-content" v-pre>
+              <h3 id="什么是相等">什么是相等</h3>
+<p>在C#中我们经常会需要判断两个变量是否相等，相等理论上有两种：</p>
+<ul>
+<li><strong>同一性(identity)</strong>，即是否两个变量是否指向同一个对象。</li>
+<li><strong>相等性(equality)</strong>，即两个变量内部的值是否相同，例如两个字符串的内容是否相同。</li>
+</ul>
+<p>显然如果两个变量是相同对象，那么它们也必然相等。根据具体使用的上下文我们可能需要判断同一性或者相等性之一，因此就需要了解如何进行判断。</p>
+<h3 id="c判断相等的方式">C#判断相等的方式</h3>
+<p>C#的System.Object类提供了如下方式来判断对象的相等性：</p>
+<pre><code class="language-csharp">public static bool Equals(Object? objA, Object? objB);
+public static bool ReferenceEquals(Object? objA, Object? objB);
+public virtual bool Equals(Object? obj);
+operator ==;
+</code></pre>
+<p>首先是ReferenceEquals，这个顾名思义就是判断两个变量是否引用同一个对象，在需要明确判断引用相等的时候可以使用这个函数。</p>
+<p>其次是Equals方法，这个方法在Object类中定义，默认实现是调用ReferenceEquals，即判断引用是否相等。但是我们看到这是一个虚方法，因此很多类型重写了这个方法，例如String类型，重写后比较的是字符串的内容是否相同。</p>
+<p>而相等运算符和Equals方法类似，也可以被重载，以实现自定义类型的相等判断。根据<a href="[超链接地址](https:https://learn.microsoft.com/zh-cn/dotnet/csharp/language-reference/operators/equality-operators#equality-operator-)" title="超链接title">官方文档</a>介绍，对于值类型是判断其内部值是否相同，对于引用类型是默认判断是否引用同一对象，对于委托和字符串等也有各自的实现。</p>
+<p>值得注意的是，用户定义的struct类型默认没有支持==操作符，但是可以使用ValueType的Equals方法来判断两个值类型的内部值是否相同，例如:</p>
+<pre><code class="language-csharp">static void Main(string[] args)
+{
+    Point p1 = new Point(1, 1);
+    Point p2 = new Point(1, 1);
+    Console.WriteLine(&quot;p1 == p2:{0}&quot;, p1.Equals(p2)); // 输出 p1 == p2:True
+    Console.WriteLine(&quot;p1 == p2:{0}&quot;, p1 == p2); // 编译错误 Operator '==' cannot be applied to operands of type 'Point' and 'Point'
+}
+
+internal struct Point
+{
+    private Int32 m_x, m_y;
+    public Point(Int32 x, Int32 y)
+    {
+        m_x = x;
+        m_y = y;
+    }
+}
+</code></pre>
+<p>综上，C#提供了多种方式来判断对象的相等性，包括引用相等和值相等，开发者需要根据具体需求选择合适的方法进行判断。</p>
+<h3 id="如何自定义相等判断">如何自定义相等判断</h3>
+<p>我们自定义的类如果需要实现自己的相等判断逻辑，那么可以重载Object的<code>public virtual bool Equals(Object? obj)</code>方法以及重写==操作运算符，如果重写了其中之一，那么推荐也重写另一个相等判断，否则可能由于使用习惯使用了没有重写的相等判断造成bug。</p>
+<p>重写时需要注意相等性判断要符合一下特性:</p>
+<ul>
+<li>自反性。x.Equals(x) 应该返回 true</li>
+<li>对称性。x.Equals(y) 应该返回和 y.Equals(x) 相同的结果</li>
+<li>可传递。x.Equals(y) 和 y.Equals(z) 都返回 true，那么 x.Equals(z) 也应该返回 true</li>
+<li>一致性。x.Equals(y) 多次调用应该返回相同的结果，除非x或y的值发生了变化。</li>
+</ul>
+<p>如果重写了<code>public virtual bool Equals(Object? obj)</code>方法，那么也应该重写<code>GetHashCode</code>方法，因为相等的对象必须有相同的哈希码，否则以这个类的对象作为key来索引时会导致相同的对象索引到不同的数据，而且编译器也会给出有一个<a href="[超链接地址](https://learn.microsoft.com/en-us/dotnet/csharp/misc/cs0659?f1url=%3FappId%3Droslyn%26k%3Dk(CS0659))" title="超链接title">编译警告</a>。</p>
+<p>除了使用继承来的Object的相关方法来判断相等，我们还可以继承IEquatable<T>接口实现自己的Equals方法，该方法和Object的Equals方法类似，但是<strong>类型更安全</strong>，因为它的参数是该类型的变量，而不是Object对象，不需要装箱和拆箱操作。</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://heanrum.github.io/tag/j0DKDlry4/" class="tag">
+                    C#
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://heanrum.github.io/post/zhuang-xiang-chai-xiang-boxing-and-unboxing/">
+                  <h3 class="post-title">
+                    装箱拆箱(boxing and unboxing)
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+              
+                <div id="gitalk-container" data-aos="fade-in"></div>
+              
+
+              
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+  
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script>
+
+      var gitalk = new Gitalk({
+        clientID: 'Ov23libpOKGYNmfbvgML',
+        clientSecret: '380f70e56ac1cd42d062cad166ec7950bd123bd1',
+        repo: 'heanrum.github.io',
+        owner: 'heanrum',
+        admin: ['heanrum'],
+        id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+        distractionFreeMode: false  // Facebook-like distraction free mode
+      })
+
+      gitalk.render('gitalk-container')
+
+    </script>
+  
+
+  
+
+
+
+
+  </body>
+</html>

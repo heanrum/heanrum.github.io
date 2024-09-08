@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>标识符命名那些事 | 秋收冬藏</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://heanrum.github.io/favicon.ico?v=1725801117880">
+<link rel="stylesheet" href="https://heanrum.github.io/styles/main.css">
+
+
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css" />
+  
+
+  
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="命名的重要性
+
+Your code is for a human first and a computer second. Humans need good names.
+— Martin Fowler, Refactoring:Impro..." />
+    <meta name="keywords" content="编程" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://heanrum.github.io">
+        <img src="https://heanrum.github.io/images/avatar.png?v=1725801117880" class="site-logo">
+        <h1 class="site-title">秋收冬藏</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      温故而知新
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://heanrum.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">标识符命名那些事</h2>
+            <div class="post-date">2024-08-17</div>
+            
+              <div class="feature-container" style="background-image: url('https://heanrum.github.io/post-images/biao-shi-fu-ming-ming-na-xie-shi.png')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <h3 id="命名的重要性">命名的重要性</h3>
+<blockquote>
+<p>Your code is for a human first and a computer second. Humans need good names.</p>
+<p align="right">— Martin Fowler, Refactoring:Improving the Design of Existing Code</p>
+</blockquote>
+<ul>
+<li>好的命名使代码更容易理解
+<ul>
+<li>理解力</li>
+<li>帮助记忆。记住代码逻辑、结构和作用。</li>
+</ul>
+</li>
+<li>提高工作效率
+<ul>
+<li>提升查找效率</li>
+<li>减少阅读理解代码成本
+<ul>
+<li>减少修BUG时间</li>
+<li>减少开发时间</li>
+</ul>
+</li>
+<li>减少沟通成本</li>
+</ul>
+</li>
+<li>助力职业发展
+<ul>
+<li>好的命名需要对相关概念和知识有清楚的理解和认识。</li>
+</ul>
+</li>
+</ul>
+<h3 id="命名的难点">命名的难点</h3>
+<blockquote>
+<p>There are only two hard things in Computer Science: cache invalidationand naming things.</p>
+<p align="right">— Phil Karlton</p>
+</blockquote>
+<ul>
+<li>缺乏相关标准或工具
+<ul>
+<li>无法精准评价命名的好坏</li>
+</ul>
+</li>
+<li>需求可能迭代变化
+<ul>
+<li>某些情况下好的命名可能由于功能迭代变成坏的命名</li>
+</ul>
+</li>
+<li>收益不明显
+<ul>
+<li>想出一个更好的命名可能需要花更多的时间。</li>
+</ul>
+</li>
+</ul>
+<h3 id="命名原则">命名原则</h3>
+<ul>
+<li>Understandability
+<ul>
+<li>
+<blockquote>
+<p>What is above all needed is to let the meaning choose the word, and not the other way around. In prose,the worst thing you can do with words is to surrender to them. <p align="right">— George Orwell</p></p>
+</blockquote>
+</li>
+<li>表示正确的概念</li>
+<li>用字典里有的单词
+<ul>
+<li>people_group(<em>bad</em>) vs organization(<em>good</em>)</li>
+</ul>
+</li>
+<li>正确的复数</li>
+<li>正确的词性</li>
+<li>避免误导
+<ul>
+<li>lua的table和list</li>
+</ul>
+</li>
+<li>使用正确的专业术语</li>
+<li>包含量纲的单位</li>
+<li>避免不通用的缩写</li>
+</ul>
+</li>
+<li>Conciseness
+<ul>
+<li>
+<blockquote>
+<p>The more you say,the less people remember. <p align="right">— Francois Fenelon</p></p>
+</blockquote>
+</li>
+<li>抽象层级要合适</li>
+<li>省略元数据
+<ul>
+<li>类型，作用范围</li>
+<li>动态类型语言不推荐省略</li>
+</ul>
+</li>
+<li>省略实现细节</li>
+</ul>
+</li>
+<li>Consistency
+<ul>
+<li>
+<blockquote>
+<p>It is better to have a system...reflect one set of design ideas than to haveone that contains many good but independent and uncoordinated ideas.<p align="right">— Fred Brooks, The Mythical Man-Month</p></p>
+</blockquote>
+</li>
+<li>每个概念只能有一个名字
+<ul>
+<li>避免描述一个概念使用多个不同的同义词</li>
+<li>术语要正确</li>
+</ul>
+</li>
+<li>相似的概念有相似的名字</li>
+<li>相似的名字有相似的格式</li>
+<li>遵守一套编程规范</li>
+<li>使用正确的反义词</li>
+</ul>
+</li>
+<li>Distinguishablity
+<ul>
+<li>避免多义词</li>
+<li>避免同音词</li>
+</ul>
+</li>
+<li>Tradeoff
+<ul>
+<li>优先保证Consistency
+<ul>
+<li>不一致往往其它原则也不会满足</li>
+</ul>
+</li>
+<li>Understandability vs Conciseness
+<ul>
+<li>取决于上下文</li>
+<li>借助Distinguishablity来判断</li>
+</ul>
+</li>
+<li>Understandability vs Distinguishability
+<ul>
+<li>同义词很容易触发问题</li>
+</ul>
+</li>
+<li>Conciseness vs. Distinguishability
+<ul>
+<li>优先Distinguishability</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://heanrum.github.io/tag/kePuB0owI/" class="tag">
+                    编程
+                  </a>
+                
+              </div>
+            
+            
+
+            
+              
+                <div id="gitalk-container" data-aos="fade-in"></div>
+              
+
+              
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+  
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script>
+
+      var gitalk = new Gitalk({
+        clientID: 'Ov23libpOKGYNmfbvgML',
+        clientSecret: '380f70e56ac1cd42d062cad166ec7950bd123bd1',
+        repo: 'heanrum.github.io',
+        owner: 'heanrum',
+        admin: ['heanrum'],
+        id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+        distractionFreeMode: false  // Facebook-like distraction free mode
+      })
+
+      gitalk.render('gitalk-container')
+
+    </script>
+  
+
+  
+
+
+
+
+  </body>
+</html>

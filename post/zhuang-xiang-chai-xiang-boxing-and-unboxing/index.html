@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>装箱拆箱(boxing and unboxing) | 秋收冬藏</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://heanrum.github.io/favicon.ico?v=1725801117880">
+<link rel="stylesheet" href="https://heanrum.github.io/styles/main.css">
+
+
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css" />
+  
+
+  
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="1.引用类型和值类型
+为了理解装箱和拆箱，首先需要了解值类型和引用类型的特点。
+
+引用类型:
+
+必须从托管堆分配
+每个对象有一些额外成员，这些成员必须初始化
+对象中其它字节总是为0
+从托管堆分配对象，可能强制执行一次垃圾回收
+
+
+
+从引用类..." />
+    <meta name="keywords" content="C#" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://heanrum.github.io">
+        <img src="https://heanrum.github.io/images/avatar.png?v=1725801117880" class="site-logo">
+        <h1 class="site-title">秋收冬藏</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      温故而知新
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://heanrum.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">装箱拆箱(boxing and unboxing)</h2>
+            <div class="post-date">2024-08-31</div>
+            
+            <div class="post-content" v-pre>
+              <h3 id="1引用类型和值类型">1.引用类型和值类型</h3>
+<p>为了理解装箱和拆箱，首先需要了解值类型和引用类型的特点。</p>
+<ul>
+<li>引用类型:
+<ul>
+<li>必须从托管堆分配</li>
+<li>每个对象有一些额外成员，这些成员必须初始化</li>
+<li>对象中其它字节总是为0</li>
+<li>从托管堆分配对象，可能强制执行一次垃圾回收</li>
+</ul>
+</li>
+</ul>
+<p>从引用类型的特点我们可以知道，如果所有类型都是引用类型，由于内存分配和垃圾回收等原因的存在，那么内存管理和性能开销将会非常大。因此，C#语言提供了值类型来优化。</p>
+<ul>
+<li>值类型
+<ul>
+<li>一般在线程栈上分配</li>
+<li>变量中不包含指向实例的指针</li>
+</ul>
+</li>
+</ul>
+<p>由于值类型对象是在栈上分配，因此值类型对象的分配和回收都是比引用类型对象更高效，因为栈上内存分配和回收只需要移动栈指针即可。C#中提供了许多内置的值类型，如int、float、double等。</p>
+<p>C#是通过struct和class关键字来区分值类型和引用类型的，struct定义值类型，class定义引用类型。注意这点与C++不同，C++中struct和class只表示类中成员的默认访问权限是public还是private。C++中指定在栈上还是堆中分配内存是通过初始化变量的方式来确定的，使用new运算符则表示在堆上分配内存。也就是说C#中是<strong>定义类型</strong>的开发者决定在什么地方分配内存，而C++中是<strong>使用类型</strong>的开发者来决定。</p>
+<h3 id="2装箱和拆箱">2.装箱和拆箱</h3>
+<h4 id="21-装箱boxing">2.1 装箱(boxing)</h4>
+<p><strong>装箱就是把值类型转换成引用类型的机制。</strong> 装箱发生的时候，会在托管堆上重新分配内存新建一个对象，值类型的字段会复制到新分配的内存上。因此操作装箱后的对象对原始的值类型对象不会产生影响。</p>
+<p>那么什么情况下会用到装箱机制呢，或者什么情况下需要把一个值类型转换成引用类型呢？一种常见的情况是将值类型传递给需要引用类型参数的方法时，例如当一个方法需要一个object类型的参数，而你传递的是一个值类型时，就会发生装箱操作。</p>
+<pre><code class="language-c#">class Program
+{
+    static void Main(string[] args)
+    {
+        ArrayList arrayList = new ArrayList();
+        Point p = new Point { X = 10, Y = 20 };
+        arrayList.Add(p); // 发生装箱，把引用添加到ArrayList中
+    }
+}
+
+public struct Point
+{
+    public int X, Y;
+}
+</code></pre>
+<p>例如上面的代码，ArrayList的Add函数接口如下，它接收的参数类型是Object，是一个引用。因此调用ArrayList的Add方法添加一个值类型对象到ArrayList中时，会发生装箱操作。</p>
+<pre><code class="language-c#">public virtual int Add(object? value);
+</code></pre>
+<h4 id="22-拆箱unboxing">2.2 拆箱(unboxing)</h4>
+<p>与装箱对应就是拆箱，<strong>拆箱就是把装箱后的值类型从引用类型转换回原始的值类型。</strong> 注意拆箱操作不要求在内存中复制任何字节，而是获取对象中原始值类型指针的过程。但是往往在拆箱之后会有一次复制的操作把拆箱后的对象赋值给一个值类型对象。</p>
+<pre><code class="language-c#">Point p1 = (Point)arrayList[0];
+</code></pre>
+<p>例如上面代码中的<code>(Point)arrayList[0]</code>就是一个拆箱操作，把<code>arrayList[0]</code>中的引用类型转换回值类型Point。</p>
+<h3 id="3注意事项">3.注意事项</h3>
+<h4 id="31-减少装箱拆箱">3.1 减少装箱拆箱</h4>
+<p>从上述描述我们可以知道，装箱拆箱往往伴随着内存分配和数据拷贝操作，因此编写代码过程中应该注意尽量减少装箱拆箱。</p>
+<p>看下面这个例子:</p>
+<pre><code class="language-c#">static void Main(string[] args)
+{
+   Int32 a = 5;
+   Console.WriteLine(&quot;{0}, {1}, {2}&quot;, a, a, a); // 发生三次装箱
+}
+</code></pre>
+<p>使用ildasm.exe可以看到上述代码生成的IL代码:</p>
+<pre><code>.method private hidebysig static void  Main(string[] args) cil managed
+{
+  .entrypoint
+  // 代码大小       33 (0x21)
+  .maxstack  4
+  .locals init (int32 V_0)
+  IL_0000:  nop
+  IL_0001:  ldc.i4.5
+  IL_0002:  stloc.0
+  IL_0003:  ldstr      &quot;{0}, {1}, {2}&quot;
+  IL_0008:  ldloc.0
+  IL_0009:  box        [mscorlib]System.Int32
+  IL_000e:  ldloc.0
+  IL_000f:  box        [mscorlib]System.Int32
+  IL_0014:  ldloc.0
+  IL_0015:  box        [mscorlib]System.Int32
+  IL_001a:  call       void [mscorlib]System.Console::WriteLine(string,
+                                                                object,
+                                                                object,
+                                                                object)
+  IL_001f:  nop
+  IL_0020:  ret
+} // end of method Program::Main
+</code></pre>
+<p>可以看到IL代码中有3次box即装箱操作，而我们又不需要修改这三个不同的装箱对象，因此这里可以提前手动装箱，这样可以减少两次装箱操作。<br>
+代码如下:</p>
+<pre><code class="language-c#">static void Main(string[] args)
+{
+   Int32 a = 5;
+   Object o = a;
+   Console.WriteLine(&quot;{0}, {1}, {2}&quot;, o, o, o);
+}
+</code></pre>
+<h4 id="32-其它装箱情况">3.2 其它装箱情况</h4>
+<ul>
+<li>值类型对象没有类型对象指针，但是调用重写的虚方法时不需要装箱，因为值类型是sealed，因此调用的虚方法一定就是重写的虚方法。<strong>而如果调用继承的方法(比如<code>GetType</code>或<code>MemberwiseClone</code>)和没有重写的虚方法时，就需要装箱</strong>。因为这些方法在System.Object中定义，需要接收一个this实参，即指向堆对象的指针。</li>
+<li><strong>值类型转型为类型的某个接口时需要装箱</strong>，因为接口变量必须包含对堆对象的引用</li>
+</ul>
+<h4 id="33-使用接口更改已装箱对象中的字段">3.3 使用接口更改已装箱对象中的字段</h4>
+<p>自定义的值类型无法继承其它类，但是可以实现接口，因此如果接口提供了修改内部字段的方法，那么就可以通过把装箱对象转成该接口然后通过该方法来修改内部字段，<strong>但是非常不推荐这种，值类型应该是不可变的</strong>。</p>
+<p>代码如下:</p>
+<pre><code class="language-c#">namespace HelloWorld
+{
+    sealed class Program
+    {
+        static void Main(string[] args)
+        {
+            Point p = new Point(1, 1);
+            Console.WriteLine(p); //(1,1)
+
+            p.Change(2, 2);
+            Console.WriteLine(p); //(2,2)
+
+            object o = p;
+            Console.WriteLine(o); //(2,2)
+
+            ((Point) o).Change(3, 3);
+            Console.WriteLine(o); //(2,2)
+
+            ((IChangeable) o).Change(3, 3);
+            Console.WriteLine(o); //(3,3)
+        }
+    }
+}
+
+internal interface IChangeable
+{
+    public void Change(Int32 x, Int32 y);
+}
+
+internal struct Point : IChangeable
+{
+    private Int32 m_x, m_y;
+    public Point(Int32 x, Int32 y)
+    {
+        m_x = x;
+        m_y = y;
+    }
+    public void Change(Int32 x, Int32 y)
+    {
+        m_x = x;
+        m_y = y;
+    }
+    public override String ToString()
+    {
+        return String.Format(&quot;({0},{1})&quot;, m_x.ToString(), m_y.ToString());
+    }
+}
+</code></pre>
+<p>值得注意的是，<code> ((Point) o).Change(3, 3);</code>这行代码实际上并不会修改o中的字段，因为这里会先拆箱再装箱，产生一个新的Point对象，修改的是这个新的Point对象的字段，而不是o中的字段。但是通过把o转换成IChangeable接口，然后调用Change方法，就可以修改其内部字段。转化接口的过程没有拆箱，因此修改的就是对象o中的字段。</p>
+<h4 id="34-值类型应该是不可变的">3.4 值类型应该是不可变的</h4>
+<p>通过3.3中的例子我们可以看到，如果一个值类型中的字段是可变的，我们需要高度关注每个装箱和拆箱过程，避免发生预期之外的错误。如果值类型是不可变的，那么我们就不用过多关心什么时候发生了装箱和拆箱（当然仍然需要关注太多装箱拆箱产生的性能问题）</p>
+<p>目前FCL（Framework Class Library）的核心值类型 <strong>（Int32、Int64、Int64、UInt64、Single、Double、Decimal、Boolean等）</strong> 都是不可变的，例如我们修改一个Int32的变量的值并不是修改这个变量的内部值，而是新建了一个Int32对象并赋值给这个变量。</p>
+<p>我们可以用如下方式创建一个不可变的类型，如果需要修改内部值，我们通过创建一个新的实例来代替修改：</p>
+<pre><code class="language-c#">public struct ImmutablePoint
+{
+    public readonly int X;
+    public readonly int Y;
+
+    public ImmutablePoint(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+
+    public ImmutablePoint Move(int dx, int dy)
+    {
+        return new ImmutablePoint(X + dx, Y + dy);
+    }
+}
+</code></pre>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://heanrum.github.io/tag/j0DKDlry4/" class="tag">
+                    C#
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://heanrum.github.io/post/lua-de-ostimebu-ke-kua-ping-tai-shi-yong/">
+                  <h3 class="post-title">
+                    lua的os.time()受时区影响
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+              
+                <div id="gitalk-container" data-aos="fade-in"></div>
+              
+
+              
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+  
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script>
+
+      var gitalk = new Gitalk({
+        clientID: 'Ov23libpOKGYNmfbvgML',
+        clientSecret: '380f70e56ac1cd42d062cad166ec7950bd123bd1',
+        repo: 'heanrum.github.io',
+        owner: 'heanrum',
+        admin: ['heanrum'],
+        id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+        distractionFreeMode: false  // Facebook-like distraction free mode
+      })
+
+      gitalk.render('gitalk-container')
+
+    </script>
+  
+
+  
+
+
+
+
+  </body>
+</html>

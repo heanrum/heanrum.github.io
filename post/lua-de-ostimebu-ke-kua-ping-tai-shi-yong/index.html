@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>lua的os.time()受时区影响 | 秋收冬藏</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://heanrum.github.io/favicon.ico?v=1725801117880">
+<link rel="stylesheet" href="https://heanrum.github.io/styles/main.css">
+
+
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css" />
+  
+
+  
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="问题
+最近在项目中发现os.time()返回的结果里把输入当作本地时间进行处理，而不是当作UTC的时间处理。
+例如这样一行代码:
+local tm = os.time({year=1970, month=1, day=1, hour = 8..." />
+    <meta name="keywords" content="lua" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://heanrum.github.io">
+        <img src="https://heanrum.github.io/images/avatar.png?v=1725801117880" class="site-logo">
+        <h1 class="site-title">秋收冬藏</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      温故而知新
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://heanrum.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">lua的os.time()受时区影响</h2>
+            <div class="post-date">2024-08-19</div>
+            
+            <div class="post-content" v-pre>
+              <h3 id="问题">问题</h3>
+<p>最近在项目中发现os.time()返回的结果里把输入当作本地时间进行处理，而不是当作UTC的时间处理。<br>
+例如这样一行代码:</p>
+<pre><code class="language-lua">local tm = os.time({year=1970, month=1, day=1, hour = 8});
+print(tm)
+</code></pre>
+<p>预期返回是8*60*60，但是输出tm会得到0。具体原因就是作者目前所在位置使用北京时间(UTC+8)，去掉8小时的时区偏移后，结果就是1970年1月1日00:00:00 UTC的时间戳。</p>
+<h3 id="深入">深入</h3>
+<h4 id="查看文档">查看文档</h4>
+<p>对于这个结果有疑问，于是翻阅了一下<a href="[超链接地址](https://www.lua.org/manual/5.3/manual.html#pdf-os.time)" title="超链接title">Lua官方文档</a>，可以看到os.time的介绍里有这样一行提示</p>
+<blockquote>
+<p>The returned value is a number, whose meaning depends on your system.<br>
+(返回值是一个数字，<strong>它的含义取决于你的系统</strong>)</p>
+</blockquote>
+<p>所以这里其实已经指出了os.time()的返回值会受到系统时区的影响，因此在跨平台使用时需要特别注意时区差异。</p>
+<h4 id="查看源码">查看源码</h4>
+<p>但是不满足于此，我又翻了一下lua的源码，看到os.date的实现如下:</p>
+<pre><code class="language-lua">static int os_time (lua_State *L) {
+  time_t t;
+  if (lua_isnoneornil(L, 1))  /* called without args? */
+    t = time(NULL);  /* get current time */
+  else {
+    struct tm ts;
+    luaL_checktype(L, 1, LUA_TTABLE);
+    lua_settop(L, 1);  /* make sure table is at the top */
+    ts.tm_sec = getfield(L, &quot;sec&quot;, 0, 0);
+    ts.tm_min = getfield(L, &quot;min&quot;, 0, 0);
+    ts.tm_hour = getfield(L, &quot;hour&quot;, 12, 0);
+    ts.tm_mday = getfield(L, &quot;day&quot;, -1, 0);
+    ts.tm_mon = getfield(L, &quot;month&quot;, -1, 1);
+    ts.tm_year = getfield(L, &quot;year&quot;, -1, 1900);
+    ts.tm_isdst = getboolfield(L, &quot;isdst&quot;);
+    t = mktime(&amp;ts); /* 真正获取时间的地方 */
+    setallfields(L, &amp;ts);  /* update fields with normalized values */
+  }
+  if (t != (time_t)(l_timet)t || t == (time_t)(-1))
+    return luaL_error(L,
+                  &quot;time result cannot be represented in this installation&quot;);
+  l_pushtime(L, t);
+  return 1;
+}
+</code></pre>
+<p>可以的看到真正获取时间的代码是</p>
+<pre><code class="language-lua">t = mktime(&amp;ts);
+</code></pre>
+<p>而mktime函数是C标准库中的一个函数，它将一个struct tm结构体转换为time_t类型的值，同时考虑了本地时区的影响。</p>
+<p>那么为什么lua要用这样一个函数来实现，有没有接口能够避免时区的影响，确保返回的时间戳是基于UTC的呢？在<a href="https://stackoverflow.com/questions/530519/stdmktime-and-timezone-info">stackoverflow</a>中找到了答案，简而言之目前没有比较简单和通用的方法来避免时区的影响。不过在部分平台可以使用其它函数，例如在windows平台可以使用<strong>_mkgmtime</strong>，而在linux和BSD可以使用<strong>timegm</strong>，但是在PS5平台则没有比较合适的函数。</p>
+<h4 id="手动计算">手动计算</h4>
+<p>考虑到既然计算规则是很明确的，就是计算给定的日期相对于1970年1月1日0点的时间戳，那么理论上我们是可以自己实现计算逻辑的。</p>
+<p>正巧我发现luau（Lua语言的一个分支，但它包含了一些改进和优化）实现了上述计算逻辑，在luau中os.time()返回的是UTC时间的时间戳，其<a href="https://github.com/luau-lang/luau/blob/b23d43496bed0f16eb6225551a9ce30435e4b4f2/VM/src/loslib.cpp#L24">计算时间戳代码</a>如下:</p>
+<pre><code class="language-cpp">static time_t os_timegm(struct tm* timep)
+{
+    // Julian day number calculation
+    int day = timep-&gt;tm_mday;
+    int month = timep-&gt;tm_mon + 1;
+    int year = timep-&gt;tm_year + 1900;
+
+    // year adjustment, pretend that it starts in March
+    int a = timep-&gt;tm_mon % 12 &lt; 2 ? 1 : 0;
+
+    // also adjust for out-of-range month numbers in input
+    a -= timep-&gt;tm_mon / 12;
+
+    int y = year + 4800 - a;
+    int m = month + (12 * a) - 3;
+
+    int julianday = day + ((153 * m + 2) / 5) + (365 * y) + (y / 4) - (y / 100) + (y / 400) - 32045;
+
+    const int utcstartasjulianday = 2440588;                              // Jan 1st 1970 offset in Julian calendar
+    const int64_t utcstartasjuliansecond = utcstartasjulianday * 86400ll; // same in seconds
+
+    // fail the dates before UTC start
+    if (julianday &lt; utcstartasjulianday)
+        return time_t(-1);
+
+    int64_t daysecond = timep-&gt;tm_hour * 3600ll + timep-&gt;tm_min * 60ll + timep-&gt;tm_sec;
+    int64_t julianseconds = int64_t(julianday) * 86400ull + daysecond;
+
+    if (julianseconds &lt; utcstartasjuliansecond)
+        return time_t(-1);
+
+    int64_t utc = julianseconds - utcstartasjuliansecond;
+    return time_t(utc);
+}
+</code></pre>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://heanrum.github.io/tag/XnQVhdefc/" class="tag">
+                    lua
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://heanrum.github.io/post/biao-shi-fu-ming-ming-na-xie-shi/">
+                  <h3 class="post-title">
+                    标识符命名那些事
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+              
+                <div id="gitalk-container" data-aos="fade-in"></div>
+              
+
+              
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+  
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script>
+
+      var gitalk = new Gitalk({
+        clientID: 'Ov23libpOKGYNmfbvgML',
+        clientSecret: '380f70e56ac1cd42d062cad166ec7950bd123bd1',
+        repo: 'heanrum.github.io',
+        owner: 'heanrum',
+        admin: ['heanrum'],
+        id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+        distractionFreeMode: false  // Facebook-like distraction free mode
+      })
+
+      gitalk.render('gitalk-container')
+
+    </script>
+  
+
+  
+
+
+
+
+  </body>
+</html>

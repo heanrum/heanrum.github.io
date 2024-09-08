@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://heanrum.github.io</id>
+    <title>秋收冬藏</title>
+    <updated>2024-09-08T13:16:21.627Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://heanrum.github.io"/>
+    <link rel="self" href="https://heanrum.github.io/atom.xml"/>
+    <subtitle>温故而知新</subtitle>
+    <logo>https://heanrum.github.io/images/avatar.png</logo>
+    <icon>https://heanrum.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2024, 秋收冬藏</rights>
+    <entry>
+        <title type="html"><![CDATA[C#的ref和out]]></title>
+        <id>https://heanrum.github.io/post/cde-ref-he-out/</id>
+        <link href="https://heanrum.github.io/post/cde-ref-he-out/">
+        </link>
+        <updated>2024-09-08T12:33:29.000Z</updated>
+        <content type="html"><![CDATA[<p>CLR默认所有函数参数默认传值，在C#中无论是值类型还是引用类型的参数都是如此。对于值类型是传递了一个副本。</p>
+<pre><code class="language-csharp">sealed class Program
+{
+    static void Main(string[] args)
+    {
+        
+        Point p = new Point();
+        Console.WriteLine(p.ToString());
+
+        AddPoint(p);
+        Console.WriteLine(p.ToString());
+    }
+
+    public static void AddPoint(Point p)
+    {
+        p.x += 1;
+        p.y += 1;
+    }
+    public struct Point
+    {
+        public int x, y;
+        public override string ToString() =&gt; $&quot;({x}, {y})&quot;;
+    }
+}
+</code></pre>
+<p>上面的代码会输出两个(0,0)，因为修改的是传入的副本的值而没有修改对象p本身。</p>
+<p>对于引用类型是传递了一个对象的引用，这意味着我们无法改变作为参数传入的那个变量指向的对象。</p>
+<pre><code class="language-csharp">sealed class Program
+{
+    static void Main(string[] args)
+    {
+        
+        Point p = new Point();
+        Console.WriteLine(p.ToString());
+
+        AddPoint(p);
+        Console.WriteLine(p.ToString());
+    }
+    public static void AddPoint(Point p1)
+    {
+        p1 = new Point();
+        p1.x = 1;
+        p1.y = 1;
+    }
+    public class Point
+    {
+        public int x, y;
+        public override string ToString() =&gt; $&quot;({x}, {y})&quot;;
+    }
+}
+</code></pre>
+<p>上面的代码会输出两个(0,0)，因为只是修改p1指向的对象，而p指向的对象没有改变。</p>
+<p>而通过使用<code>ref</code>和<code>out</code>关键字，我们可以改变上述默认行为，实现参数的引用传递。CLR中是不区分out和ref，无论使用哪个关键字都会生成相同的IL代码。但是C#编译器在处理<code>ref</code>和<code>out</code>时会进行一些额外的检查，以确保参数在使用前被正确赋值。</p>
+<pre><code class="language-csharp">sealed class Program
+{
+    static void Main(string[] args)
+    {
+        Point p = new Point();
+        Console.WriteLine(p.ToString());
+
+        AddPoint(ref p);
+        Console.WriteLine(p.ToString());
+    }
+    public static void AddPoint(ref Point p1)
+    {
+        p1 = new Point();
+        p1.x = 1;
+        p1.y = 1;
+    }
+    public class Point
+    {
+        public int x, y;
+        public override string ToString() =&gt; $&quot;({x}, {y})&quot;;
+    }
+}
+</code></pre>
+<p>上图代码会输出(0,0),(1,1)，就是因为ref关键字使得传入了p的引用，因此AddPoint中修改了p1指向的对象也就修改了p指向的对象。</p>
+<p>ref和out都能传引用，但是它们有如下的<strong>不同</strong>:</p>
+<ul>
+<li>ref需要传入一个已经初始化过的对象。</li>
+<li>out需要对象在函数内部有被写入过。</li>
+</ul>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[C#的相等判断]]></title>
+        <id>https://heanrum.github.io/post/cde-xiang-deng-pan-duan/</id>
+        <link href="https://heanrum.github.io/post/cde-xiang-deng-pan-duan/">
+        </link>
+        <updated>2024-09-01T12:11:48.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="什么是相等">什么是相等</h3>
+<p>在C#中我们经常会需要判断两个变量是否相等，相等理论上有两种：</p>
+<ul>
+<li><strong>同一性(identity)</strong>，即是否两个变量是否指向同一个对象。</li>
+<li><strong>相等性(equality)</strong>，即两个变量内部的值是否相同，例如两个字符串的内容是否相同。</li>
+</ul>
+<p>显然如果两个变量是相同对象，那么它们也必然相等。根据具体使用的上下文我们可能需要判断同一性或者相等性之一，因此就需要了解如何进行判断。</p>
+<h3 id="c判断相等的方式">C#判断相等的方式</h3>
+<p>C#的System.Object类提供了如下方式来判断对象的相等性：</p>
+<pre><code class="language-csharp">public static bool Equals(Object? objA, Object? objB);
+public static bool ReferenceEquals(Object? objA, Object? objB);
+public virtual bool Equals(Object? obj);
+operator ==;
+</code></pre>
+<p>首先是ReferenceEquals，这个顾名思义就是判断两个变量是否引用同一个对象，在需要明确判断引用相等的时候可以使用这个函数。</p>
+<p>其次是Equals方法，这个方法在Object类中定义，默认实现是调用ReferenceEquals，即判断引用是否相等。但是我们看到这是一个虚方法，因此很多类型重写了这个方法，例如String类型，重写后比较的是字符串的内容是否相同。</p>
+<p>而相等运算符和Equals方法类似，也可以被重载，以实现自定义类型的相等判断。根据<a href="[超链接地址](https:https://learn.microsoft.com/zh-cn/dotnet/csharp/language-reference/operators/equality-operators#equality-operator-)" title="超链接title">官方文档</a>介绍，对于值类型是判断其内部值是否相同，对于引用类型是默认判断是否引用同一对象，对于委托和字符串等也有各自的实现。</p>
+<p>值得注意的是，用户定义的struct类型默认没有支持==操作符，但是可以使用ValueType的Equals方法来判断两个值类型的内部值是否相同，例如:</p>
+<pre><code class="language-csharp">static void Main(string[] args)
+{
+    Point p1 = new Point(1, 1);
+    Point p2 = new Point(1, 1);
+    Console.WriteLine(&quot;p1 == p2:{0}&quot;, p1.Equals(p2)); // 输出 p1 == p2:True
+    Console.WriteLine(&quot;p1 == p2:{0}&quot;, p1 == p2); // 编译错误 Operator '==' cannot be applied to operands of type 'Point' and 'Point'
+}
+
+internal struct Point
+{
+    private Int32 m_x, m_y;
+    public Point(Int32 x, Int32 y)
+    {
+        m_x = x;
+        m_y = y;
+    }
+}
+</code></pre>
+<p>综上，C#提供了多种方式来判断对象的相等性，包括引用相等和值相等，开发者需要根据具体需求选择合适的方法进行判断。</p>
+<h3 id="如何自定义相等判断">如何自定义相等判断</h3>
+<p>我们自定义的类如果需要实现自己的相等判断逻辑，那么可以重载Object的<code>public virtual bool Equals(Object? obj)</code>方法以及重写==操作运算符，如果重写了其中之一，那么推荐也重写另一个相等判断，否则可能由于使用习惯使用了没有重写的相等判断造成bug。</p>
+<p>重写时需要注意相等性判断要符合一下特性:</p>
+<ul>
+<li>自反性。x.Equals(x) 应该返回 true</li>
+<li>对称性。x.Equals(y) 应该返回和 y.Equals(x) 相同的结果</li>
+<li>可传递。x.Equals(y) 和 y.Equals(z) 都返回 true，那么 x.Equals(z) 也应该返回 true</li>
+<li>一致性。x.Equals(y) 多次调用应该返回相同的结果，除非x或y的值发生了变化。</li>
+</ul>
+<p>如果重写了<code>public virtual bool Equals(Object? obj)</code>方法，那么也应该重写<code>GetHashCode</code>方法，因为相等的对象必须有相同的哈希码，否则以这个类的对象作为key来索引时会导致相同的对象索引到不同的数据，而且编译器也会给出有一个<a href="[超链接地址](https://learn.microsoft.com/en-us/dotnet/csharp/misc/cs0659?f1url=%3FappId%3Droslyn%26k%3Dk(CS0659))" title="超链接title">编译警告</a>。</p>
+<p>除了使用继承来的Object的相关方法来判断相等，我们还可以继承IEquatable<T>接口实现自己的Equals方法，该方法和Object的Equals方法类似，但是<strong>类型更安全</strong>，因为它的参数是该类型的变量，而不是Object对象，不需要装箱和拆箱操作。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[装箱拆箱(boxing and unboxing)]]></title>
+        <id>https://heanrum.github.io/post/zhuang-xiang-chai-xiang-boxing-and-unboxing/</id>
+        <link href="https://heanrum.github.io/post/zhuang-xiang-chai-xiang-boxing-and-unboxing/">
+        </link>
+        <updated>2024-08-31T02:46:06.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="1引用类型和值类型">1.引用类型和值类型</h3>
+<p>为了理解装箱和拆箱，首先需要了解值类型和引用类型的特点。</p>
+<ul>
+<li>引用类型:
+<ul>
+<li>必须从托管堆分配</li>
+<li>每个对象有一些额外成员，这些成员必须初始化</li>
+<li>对象中其它字节总是为0</li>
+<li>从托管堆分配对象，可能强制执行一次垃圾回收</li>
+</ul>
+</li>
+</ul>
+<p>从引用类型的特点我们可以知道，如果所有类型都是引用类型，由于内存分配和垃圾回收等原因的存在，那么内存管理和性能开销将会非常大。因此，C#语言提供了值类型来优化。</p>
+<ul>
+<li>值类型
+<ul>
+<li>一般在线程栈上分配</li>
+<li>变量中不包含指向实例的指针</li>
+</ul>
+</li>
+</ul>
+<p>由于值类型对象是在栈上分配，因此值类型对象的分配和回收都是比引用类型对象更高效，因为栈上内存分配和回收只需要移动栈指针即可。C#中提供了许多内置的值类型，如int、float、double等。</p>
+<p>C#是通过struct和class关键字来区分值类型和引用类型的，struct定义值类型，class定义引用类型。注意这点与C++不同，C++中struct和class只表示类中成员的默认访问权限是public还是private。C++中指定在栈上还是堆中分配内存是通过初始化变量的方式来确定的，使用new运算符则表示在堆上分配内存。也就是说C#中是<strong>定义类型</strong>的开发者决定在什么地方分配内存，而C++中是<strong>使用类型</strong>的开发者来决定。</p>
+<h3 id="2装箱和拆箱">2.装箱和拆箱</h3>
+<h4 id="21-装箱boxing">2.1 装箱(boxing)</h4>
+<p><strong>装箱就是把值类型转换成引用类型的机制。</strong> 装箱发生的时候，会在托管堆上重新分配内存新建一个对象，值类型的字段会复制到新分配的内存上。因此操作装箱后的对象对原始的值类型对象不会产生影响。</p>
+<p>那么什么情况下会用到装箱机制呢，或者什么情况下需要把一个值类型转换成引用类型呢？一种常见的情况是将值类型传递给需要引用类型参数的方法时，例如当一个方法需要一个object类型的参数，而你传递的是一个值类型时，就会发生装箱操作。</p>
+<pre><code class="language-c#">class Program
+{
+    static void Main(string[] args)
+    {
+        ArrayList arrayList = new ArrayList();
+        Point p = new Point { X = 10, Y = 20 };
+        arrayList.Add(p); // 发生装箱，把引用添加到ArrayList中
+    }
+}
+
+public struct Point
+{
+    public int X, Y;
+}
+</code></pre>
+<p>例如上面的代码，ArrayList的Add函数接口如下，它接收的参数类型是Object，是一个引用。因此调用ArrayList的Add方法添加一个值类型对象到ArrayList中时，会发生装箱操作。</p>
+<pre><code class="language-c#">public virtual int Add(object? value);
+</code></pre>
+<h4 id="22-拆箱unboxing">2.2 拆箱(unboxing)</h4>
+<p>与装箱对应就是拆箱，<strong>拆箱就是把装箱后的值类型从引用类型转换回原始的值类型。</strong> 注意拆箱操作不要求在内存中复制任何字节，而是获取对象中原始值类型指针的过程。但是往往在拆箱之后会有一次复制的操作把拆箱后的对象赋值给一个值类型对象。</p>
+<pre><code class="language-c#">Point p1 = (Point)arrayList[0];
+</code></pre>
+<p>例如上面代码中的<code>(Point)arrayList[0]</code>就是一个拆箱操作，把<code>arrayList[0]</code>中的引用类型转换回值类型Point。</p>
+<h3 id="3注意事项">3.注意事项</h3>
+<h4 id="31-减少装箱拆箱">3.1 减少装箱拆箱</h4>
+<p>从上述描述我们可以知道，装箱拆箱往往伴随着内存分配和数据拷贝操作，因此编写代码过程中应该注意尽量减少装箱拆箱。</p>
+<p>看下面这个例子:</p>
+<pre><code class="language-c#">static void Main(string[] args)
+{
+   Int32 a = 5;
+   Console.WriteLine(&quot;{0}, {1}, {2}&quot;, a, a, a); // 发生三次装箱
+}
+</code></pre>
+<p>使用ildasm.exe可以看到上述代码生成的IL代码:</p>
+<pre><code>.method private hidebysig static void  Main(string[] args) cil managed
+{
+  .entrypoint
+  // 代码大小       33 (0x21)
+  .maxstack  4
+  .locals init (int32 V_0)
+  IL_0000:  nop
+  IL_0001:  ldc.i4.5
+  IL_0002:  stloc.0
+  IL_0003:  ldstr      &quot;{0}, {1}, {2}&quot;
+  IL_0008:  ldloc.0
+  IL_0009:  box        [mscorlib]System.Int32
+  IL_000e:  ldloc.0
+  IL_000f:  box        [mscorlib]System.Int32
+  IL_0014:  ldloc.0
+  IL_0015:  box        [mscorlib]System.Int32
+  IL_001a:  call       void [mscorlib]System.Console::WriteLine(string,
+                                                                object,
+                                                                object,
+                                                                object)
+  IL_001f:  nop
+  IL_0020:  ret
+} // end of method Program::Main
+</code></pre>
+<p>可以看到IL代码中有3次box即装箱操作，而我们又不需要修改这三个不同的装箱对象，因此这里可以提前手动装箱，这样可以减少两次装箱操作。<br>
+代码如下:</p>
+<pre><code class="language-c#">static void Main(string[] args)
+{
+   Int32 a = 5;
+   Object o = a;
+   Console.WriteLine(&quot;{0}, {1}, {2}&quot;, o, o, o);
+}
+</code></pre>
+<h4 id="32-其它装箱情况">3.2 其它装箱情况</h4>
+<ul>
+<li>值类型对象没有类型对象指针，但是调用重写的虚方法时不需要装箱，因为值类型是sealed，因此调用的虚方法一定就是重写的虚方法。<strong>而如果调用继承的方法(比如<code>GetType</code>或<code>MemberwiseClone</code>)和没有重写的虚方法时，就需要装箱</strong>。因为这些方法在System.Object中定义，需要接收一个this实参，即指向堆对象的指针。</li>
+<li><strong>值类型转型为类型的某个接口时需要装箱</strong>，因为接口变量必须包含对堆对象的引用</li>
+</ul>
+<h4 id="33-使用接口更改已装箱对象中的字段">3.3 使用接口更改已装箱对象中的字段</h4>
+<p>自定义的值类型无法继承其它类，但是可以实现接口，因此如果接口提供了修改内部字段的方法，那么就可以通过把装箱对象转成该接口然后通过该方法来修改内部字段，<strong>但是非常不推荐这种，值类型应该是不可变的</strong>。</p>
+<p>代码如下:</p>
+<pre><code class="language-c#">namespace HelloWorld
+{
+    sealed class Program
+    {
+        static void Main(string[] args)
+        {
+            Point p = new Point(1, 1);
+            Console.WriteLine(p); //(1,1)
+
+            p.Change(2, 2);
+            Console.WriteLine(p); //(2,2)
+
+            object o = p;
+            Console.WriteLine(o); //(2,2)
+
+            ((Point) o).Change(3, 3);
+            Console.WriteLine(o); //(2,2)
+
+            ((IChangeable) o).Change(3, 3);
+            Console.WriteLine(o); //(3,3)
+        }
+    }
+}
+
+internal interface IChangeable
+{
+    public void Change(Int32 x, Int32 y);
+}
+
+internal struct Point : IChangeable
+{
+    private Int32 m_x, m_y;
+    public Point(Int32 x, Int32 y)
+    {
+        m_x = x;
+        m_y = y;
+    }
+    public void Change(Int32 x, Int32 y)
+    {
+        m_x = x;
+        m_y = y;
+    }
+    public override String ToString()
+    {
+        return String.Format(&quot;({0},{1})&quot;, m_x.ToString(), m_y.ToString());
+    }
+}
+</code></pre>
+<p>值得注意的是，<code> ((Point) o).Change(3, 3);</code>这行代码实际上并不会修改o中的字段，因为这里会先拆箱再装箱，产生一个新的Point对象，修改的是这个新的Point对象的字段，而不是o中的字段。但是通过把o转换成IChangeable接口，然后调用Change方法，就可以修改其内部字段。转化接口的过程没有拆箱，因此修改的就是对象o中的字段。</p>
+<h4 id="34-值类型应该是不可变的">3.4 值类型应该是不可变的</h4>
+<p>通过3.3中的例子我们可以看到，如果一个值类型中的字段是可变的，我们需要高度关注每个装箱和拆箱过程，避免发生预期之外的错误。如果值类型是不可变的，那么我们就不用过多关心什么时候发生了装箱和拆箱（当然仍然需要关注太多装箱拆箱产生的性能问题）</p>
+<p>目前FCL（Framework Class Library）的核心值类型 <strong>（Int32、Int64、Int64、UInt64、Single、Double、Decimal、Boolean等）</strong> 都是不可变的，例如我们修改一个Int32的变量的值并不是修改这个变量的内部值，而是新建了一个Int32对象并赋值给这个变量。</p>
+<p>我们可以用如下方式创建一个不可变的类型，如果需要修改内部值，我们通过创建一个新的实例来代替修改：</p>
+<pre><code class="language-c#">public struct ImmutablePoint
+{
+    public readonly int X;
+    public readonly int Y;
+
+    public ImmutablePoint(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+
+    public ImmutablePoint Move(int dx, int dy)
+    {
+        return new ImmutablePoint(X + dx, Y + dy);
+    }
+}
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[lua的os.time()受时区影响]]></title>
+        <id>https://heanrum.github.io/post/lua-de-ostimebu-ke-kua-ping-tai-shi-yong/</id>
+        <link href="https://heanrum.github.io/post/lua-de-ostimebu-ke-kua-ping-tai-shi-yong/">
+        </link>
+        <updated>2024-08-19T13:44:49.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="问题">问题</h3>
+<p>最近在项目中发现os.time()返回的结果里把输入当作本地时间进行处理，而不是当作UTC的时间处理。<br>
+例如这样一行代码:</p>
+<pre><code class="language-lua">local tm = os.time({year=1970, month=1, day=1, hour = 8});
+print(tm)
+</code></pre>
+<p>预期返回是8*60*60，但是输出tm会得到0。具体原因就是作者目前所在位置使用北京时间(UTC+8)，去掉8小时的时区偏移后，结果就是1970年1月1日00:00:00 UTC的时间戳。</p>
+<h3 id="深入">深入</h3>
+<h4 id="查看文档">查看文档</h4>
+<p>对于这个结果有疑问，于是翻阅了一下<a href="[超链接地址](https://www.lua.org/manual/5.3/manual.html#pdf-os.time)" title="超链接title">Lua官方文档</a>，可以看到os.time的介绍里有这样一行提示</p>
+<blockquote>
+<p>The returned value is a number, whose meaning depends on your system.<br>
+(返回值是一个数字，<strong>它的含义取决于你的系统</strong>)</p>
+</blockquote>
+<p>所以这里其实已经指出了os.time()的返回值会受到系统时区的影响，因此在跨平台使用时需要特别注意时区差异。</p>
+<h4 id="查看源码">查看源码</h4>
+<p>但是不满足于此，我又翻了一下lua的源码，看到os.date的实现如下:</p>
+<pre><code class="language-lua">static int os_time (lua_State *L) {
+  time_t t;
+  if (lua_isnoneornil(L, 1))  /* called without args? */
+    t = time(NULL);  /* get current time */
+  else {
+    struct tm ts;
+    luaL_checktype(L, 1, LUA_TTABLE);
+    lua_settop(L, 1);  /* make sure table is at the top */
+    ts.tm_sec = getfield(L, &quot;sec&quot;, 0, 0);
+    ts.tm_min = getfield(L, &quot;min&quot;, 0, 0);
+    ts.tm_hour = getfield(L, &quot;hour&quot;, 12, 0);
+    ts.tm_mday = getfield(L, &quot;day&quot;, -1, 0);
+    ts.tm_mon = getfield(L, &quot;month&quot;, -1, 1);
+    ts.tm_year = getfield(L, &quot;year&quot;, -1, 1900);
+    ts.tm_isdst = getboolfield(L, &quot;isdst&quot;);
+    t = mktime(&amp;ts); /* 真正获取时间的地方 */
+    setallfields(L, &amp;ts);  /* update fields with normalized values */
+  }
+  if (t != (time_t)(l_timet)t || t == (time_t)(-1))
+    return luaL_error(L,
+                  &quot;time result cannot be represented in this installation&quot;);
+  l_pushtime(L, t);
+  return 1;
+}
+</code></pre>
+<p>可以的看到真正获取时间的代码是</p>
+<pre><code class="language-lua">t = mktime(&amp;ts);
+</code></pre>
+<p>而mktime函数是C标准库中的一个函数，它将一个struct tm结构体转换为time_t类型的值，同时考虑了本地时区的影响。</p>
+<p>那么为什么lua要用这样一个函数来实现，有没有接口能够避免时区的影响，确保返回的时间戳是基于UTC的呢？在<a href="https://stackoverflow.com/questions/530519/stdmktime-and-timezone-info">stackoverflow</a>中找到了答案，简而言之目前没有比较简单和通用的方法来避免时区的影响。不过在部分平台可以使用其它函数，例如在windows平台可以使用<strong>_mkgmtime</strong>，而在linux和BSD可以使用<strong>timegm</strong>，但是在PS5平台则没有比较合适的函数。</p>
+<h4 id="手动计算">手动计算</h4>
+<p>考虑到既然计算规则是很明确的，就是计算给定的日期相对于1970年1月1日0点的时间戳，那么理论上我们是可以自己实现计算逻辑的。</p>
+<p>正巧我发现luau（Lua语言的一个分支，但它包含了一些改进和优化）实现了上述计算逻辑，在luau中os.time()返回的是UTC时间的时间戳，其<a href="https://github.com/luau-lang/luau/blob/b23d43496bed0f16eb6225551a9ce30435e4b4f2/VM/src/loslib.cpp#L24">计算时间戳代码</a>如下:</p>
+<pre><code class="language-cpp">static time_t os_timegm(struct tm* timep)
+{
+    // Julian day number calculation
+    int day = timep-&gt;tm_mday;
+    int month = timep-&gt;tm_mon + 1;
+    int year = timep-&gt;tm_year + 1900;
+
+    // year adjustment, pretend that it starts in March
+    int a = timep-&gt;tm_mon % 12 &lt; 2 ? 1 : 0;
+
+    // also adjust for out-of-range month numbers in input
+    a -= timep-&gt;tm_mon / 12;
+
+    int y = year + 4800 - a;
+    int m = month + (12 * a) - 3;
+
+    int julianday = day + ((153 * m + 2) / 5) + (365 * y) + (y / 4) - (y / 100) + (y / 400) - 32045;
+
+    const int utcstartasjulianday = 2440588;                              // Jan 1st 1970 offset in Julian calendar
+    const int64_t utcstartasjuliansecond = utcstartasjulianday * 86400ll; // same in seconds
+
+    // fail the dates before UTC start
+    if (julianday &lt; utcstartasjulianday)
+        return time_t(-1);
+
+    int64_t daysecond = timep-&gt;tm_hour * 3600ll + timep-&gt;tm_min * 60ll + timep-&gt;tm_sec;
+    int64_t julianseconds = int64_t(julianday) * 86400ull + daysecond;
+
+    if (julianseconds &lt; utcstartasjuliansecond)
+        return time_t(-1);
+
+    int64_t utc = julianseconds - utcstartasjuliansecond;
+    return time_t(utc);
+}
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[标识符命名那些事]]></title>
+        <id>https://heanrum.github.io/post/biao-shi-fu-ming-ming-na-xie-shi/</id>
+        <link href="https://heanrum.github.io/post/biao-shi-fu-ming-ming-na-xie-shi/">
+        </link>
+        <updated>2024-08-17T03:01:59.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="命名的重要性">命名的重要性</h3>
+<blockquote>
+<p>Your code is for a human first and a computer second. Humans need good names.</p>
+<p align="right">— Martin Fowler, Refactoring:Improving the Design of Existing Code</p>
+</blockquote>
+<ul>
+<li>好的命名使代码更容易理解
+<ul>
+<li>理解力</li>
+<li>帮助记忆。记住代码逻辑、结构和作用。</li>
+</ul>
+</li>
+<li>提高工作效率
+<ul>
+<li>提升查找效率</li>
+<li>减少阅读理解代码成本
+<ul>
+<li>减少修BUG时间</li>
+<li>减少开发时间</li>
+</ul>
+</li>
+<li>减少沟通成本</li>
+</ul>
+</li>
+<li>助力职业发展
+<ul>
+<li>好的命名需要对相关概念和知识有清楚的理解和认识。</li>
+</ul>
+</li>
+</ul>
+<h3 id="命名的难点">命名的难点</h3>
+<blockquote>
+<p>There are only two hard things in Computer Science: cache invalidationand naming things.</p>
+<p align="right">— Phil Karlton</p>
+</blockquote>
+<ul>
+<li>缺乏相关标准或工具
+<ul>
+<li>无法精准评价命名的好坏</li>
+</ul>
+</li>
+<li>需求可能迭代变化
+<ul>
+<li>某些情况下好的命名可能由于功能迭代变成坏的命名</li>
+</ul>
+</li>
+<li>收益不明显
+<ul>
+<li>想出一个更好的命名可能需要花更多的时间。</li>
+</ul>
+</li>
+</ul>
+<h3 id="命名原则">命名原则</h3>
+<ul>
+<li>Understandability
+<ul>
+<li>
+<blockquote>
+<p>What is above all needed is to let the meaning choose the word, and not the other way around. In prose,the worst thing you can do with words is to surrender to them. <p align="right">— George Orwell</p></p>
+</blockquote>
+</li>
+<li>表示正确的概念</li>
+<li>用字典里有的单词
+<ul>
+<li>people_group(<em>bad</em>) vs organization(<em>good</em>)</li>
+</ul>
+</li>
+<li>正确的复数</li>
+<li>正确的词性</li>
+<li>避免误导
+<ul>
+<li>lua的table和list</li>
+</ul>
+</li>
+<li>使用正确的专业术语</li>
+<li>包含量纲的单位</li>
+<li>避免不通用的缩写</li>
+</ul>
+</li>
+<li>Conciseness
+<ul>
+<li>
+<blockquote>
+<p>The more you say,the less people remember. <p align="right">— Francois Fenelon</p></p>
+</blockquote>
+</li>
+<li>抽象层级要合适</li>
+<li>省略元数据
+<ul>
+<li>类型，作用范围</li>
+<li>动态类型语言不推荐省略</li>
+</ul>
+</li>
+<li>省略实现细节</li>
+</ul>
+</li>
+<li>Consistency
+<ul>
+<li>
+<blockquote>
+<p>It is better to have a system...reflect one set of design ideas than to haveone that contains many good but independent and uncoordinated ideas.<p align="right">— Fred Brooks, The Mythical Man-Month</p></p>
+</blockquote>
+</li>
+<li>每个概念只能有一个名字
+<ul>
+<li>避免描述一个概念使用多个不同的同义词</li>
+<li>术语要正确</li>
+</ul>
+</li>
+<li>相似的概念有相似的名字</li>
+<li>相似的名字有相似的格式</li>
+<li>遵守一套编程规范</li>
+<li>使用正确的反义词</li>
+</ul>
+</li>
+<li>Distinguishablity
+<ul>
+<li>避免多义词</li>
+<li>避免同音词</li>
+</ul>
+</li>
+<li>Tradeoff
+<ul>
+<li>优先保证Consistency
+<ul>
+<li>不一致往往其它原则也不会满足</li>
+</ul>
+</li>
+<li>Understandability vs Conciseness
+<ul>
+<li>取决于上下文</li>
+<li>借助Distinguishablity来判断</li>
+</ul>
+</li>
+<li>Understandability vs Distinguishability
+<ul>
+<li>同义词很容易触发问题</li>
+</ul>
+</li>
+<li>Conciseness vs. Distinguishability
+<ul>
+<li>优先Distinguishability</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+]]></content>
+    </entry>
+</feed>
