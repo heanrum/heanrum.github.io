@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>Roslyn代码生成和语法分析在Unity中的应用 | 秋收冬藏</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://heanrum.github.io/favicon.ico?v=1745636668164">
+<link rel="stylesheet" href="https://heanrum.github.io/styles/main.css">
+
+
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css" />
+  
+
+  
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="
+1.Rosyln介绍
+Roslyn是微软推出的开源.NET编译器平台，仓库地址：https://github.com/dotnet/Roslyn，其核心特点在于将传统“黑盒”式的编译器转变为开放的API服务。使得开发者能够参与编译过程，甚..." />
+    <meta name="keywords" content="Unity" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://heanrum.github.io">
+        <img src="https://heanrum.github.io/images/avatar.png?v=1745636668164" class="site-logo">
+        <h1 class="site-title">秋收冬藏</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      温故而知新
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://heanrum.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">Roslyn代码生成和语法分析在Unity中的应用</h2>
+            <div class="post-date">2025-04-26</div>
+            
+              <div class="feature-container" style="background-image: url('https://heanrum.github.io/post-images/roslyn-dai-ma-sheng-cheng-he-yu-fa-fen-xi-zai-unity-zhong-de-ying-yong.png')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <!-- more -->
+<h3 id="1rosyln介绍">1.Rosyln介绍</h3>
+<p>Roslyn是微软推出的开源.NET编译器平台，仓库地址：https://github.com/dotnet/Roslyn，其核心特点在于将传统“黑盒”式的编译器转变为开放的API服务。使得开发者能够参与编译过程，甚至修改编译结果，为开发者提供深度的代码分析、动态编译及代码生成能力。</p>
+<h3 id="2在unity中的应用">2.在unity中的应用</h3>
+<p>在unity中的样例可以参考unity的官方文档：https://docs.unity3d.com/Manual/roslyn-analyzers.html。需要注意的是想要在unity editor中使用代码生成和代码分析的话，在2020.2版本之后才生效。</p>
+<h4 id="21-如何只在ide中使用代码分析">2.1 如何只在IDE中使用代码分析</h4>
+<p>值得一提的是虽然unity editor中的代码编译的报错警告等信息通常和ide中的一样，但是这这两者实际上是独立进行的代码分析，例如vscode是依赖csproj来进行分析的，这也是有时候需要手动在unity editor的preference中手动点击重新生成csproj的原因，所以理论上可以让两者的代码分析结果不一样。</p>
+<p>通过unity的官方case我们知道，把生成的Analyzer的dll手动添加RoslynAnalyzer的tag，就可以让代码分析同时在unity editor和ide中生效。在ide中生效的原因是unity每次重新生成对应csproj的时候都会把有RoslynAnalyzer tag的对应项生成到csproj中，例如我们添加了一个名为UnityRoslyn的dll，csproj中就会有如下的项:</p>
+<pre><code class="language-json">  &lt;ItemGroup&gt;
+    &lt;Analyzer Include=&quot;xxxAssets\Plugins\UnityRoslyn.dll&quot; /&gt;
+  &lt;/ItemGroup&gt;
+</code></pre>
+<p>这样ide在进行代码分析的时候就会使用这个dll来进行代码分析。</p>
+<p>那么对于比较老版本的unity不支持RoslynAnalyzer的tag，或者只想在ide中进行代码分析，避免editor编译时间变长应该如何配置呢。</p>
+<p>首先csproj是由unity生成的，我们手动向里面添加对应的itemgroup是不行的，因为下次生成又会被自动生成的覆盖。解决方案是借助unity的asset后处理接口，在生成csproj的时候手动把这些itemgroup给添加上去：</p>
+<pre><code class="language-csharp">public class ProjectFilePostprocessor : AssetPostprocessor
+{
+    public static string OnGeneratedSlnSolution(string path, string content)
+    {
+        Debug.Log(&quot;OnGeneratedSlnSolution: &quot; + path);
+        return content;
+    }
+
+    public static string OnGeneratedCSProject(string path, string content)
+    {
+        Debug.Log(&quot;OnGeneratedCSProject: &quot;+path);
+
+        int index = content.LastIndexOf(&quot;&lt;/ItemGroup&gt;&quot;);
+        if (index != -1)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(string.Format(&quot;    &lt;Analyzer Include=\&quot;{0}/GameMain/Plugins/ErrorProne.NET.Core.dll\&quot; /&gt;\n&quot;, Application.dataPath));
+            sb.Append(string.Format(&quot;    &lt;Analyzer Include=\&quot;{0}/GameMain/Plugins/ErrorProne.Net.CoreAnalyzers.dll\&quot; /&gt;\n&quot;, Application.dataPath));
+            sb.Append(string.Format(&quot;    &lt;Analyzer Include=\&quot;{0}/GameMain/Plugins/RuntimeContracts.dll\&quot; /&gt;\n&quot;, Application.dataPath));
+            content = content.Insert(index, sb.ToString());
+        }
+        return content;
+    }
+}
+</code></pre>
+<p>在unity重新生成sln和csproj的时候会调用到OnGeneratedSlnSolution和OnGeneratedCSProject方法，因此我们在对应的方法中添加对应的Analyzer项即可。</p>
+<h3 id="3踩坑记录">3.踩坑记录</h3>
+<p>我们可以通过ruleset来指定rule的严重等级，但是在vscode中手动修改rule的Action之后不会立即生效，需要reload一下或者重启vscode才会生效。</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://heanrum.github.io/tag/1CRtxIQske/" class="tag">
+                    Unity
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://heanrum.github.io/post/emmylua-diao-shi-qi-yuan-li/">
+                  <h3 class="post-title">
+                    emmylua调试器原理
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+              
+                <div id="gitalk-container" data-aos="fade-in"></div>
+              
+
+              
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+  
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script>
+
+      var gitalk = new Gitalk({
+        clientID: 'Ov23libpOKGYNmfbvgML',
+        clientSecret: '380f70e56ac1cd42d062cad166ec7950bd123bd1',
+        repo: 'heanrum.github.io',
+        owner: 'heanrum',
+        admin: ['heanrum'],
+        id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+        distractionFreeMode: false  // Facebook-like distraction free mode
+      })
+
+      gitalk.render('gitalk-container')
+
+    </script>
+  
+
+  
+
+
+
+
+  </body>
+</html>
